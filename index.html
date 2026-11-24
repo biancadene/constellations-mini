@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION MARKER: v59-flowing-pages -->
+<!-- VERSION MARKER: v60-centered-pages -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -545,8 +545,17 @@
   }
 
   /* Text and pictures stay inside the corners on the curved page */
-  .flip-page.book-left .page-inner  { top: 17.8%; bottom: 22.6%; left: 26.3%; right: 7.5%; }
-  .flip-page.book-right .page-inner { top: 18.4%; bottom: 22.6%; left: 8.5%;  right: 27.6%; }
+  .flip-page.book-left .page-inner  { top: 20%; bottom: 31%; left: 26.3%; right: 7.5%; }
+  .flip-page.book-right .page-inner { top: 20%; bottom: 31%; left: 8.5%;  right: 27.6%; }
+  /* Each page's words and picture sit centered between the top and
+     bottom ornaments rather than pinned to the top of the page */
+  .flip-page.book-left .page-inner,
+  .flip-page.book-right .page-inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;
+  }
+  .page-flow { display: flow-root; width: 100%; }
   .flip-page.book-left .title-page-inner {
     position: absolute;
     height: auto;

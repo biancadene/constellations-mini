@@ -54,9 +54,11 @@ function buildStoryPagesHTML(story) {
     return `
       <div class="flip-page ${side}" data-density="soft" data-constellation="${story.constellation}">
         <div class="page-inner">
-          ${hasImage ? `<img class="${imgClass}"${imgStyle} src="${story.images[pageNumber]}" alt="Page ${pageNumber}" />` : ''}
-          <div class="english-text"><p>${pageData.english}</p></div>
-          ${hasDualText ? `<div class="local-text"><p>${pageData.local}</p></div>` : ''}
+          <div class="page-flow">
+            ${hasImage ? `<img class="${imgClass}"${imgStyle} src="${story.images[pageNumber]}" alt="Page ${pageNumber}" />` : ''}
+            <div class="english-text"><p>${pageData.english}</p></div>
+            ${hasDualText ? `<div class="local-text"><p>${pageData.local}</p></div>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -75,27 +77,51 @@ function buildStoryPagesHTML(story) {
   return pagesHTML.join('');
 }
 
-/* Shrink the text on any page where it doesn't fit, so no page ever
-   needs a scroll bar. Hidden pages are shown invisibly while measured. */
+/* Keep every page of a story at one text size, small enough that the
+   longest page still fits between the ornaments, so no page ever needs a
+   scroll bar. Pages not on screen have no size of their own, so each is
+   measured, invisibly, at the size of the page that is showing. */
 function fitPageText() {
-  document.querySelectorAll('.flip-page .page-inner').forEach(inner => {
-    const page = inner.closest('.flip-page');
-    const hidden = page && getComputedStyle(page).display === 'none';
-    if (hidden) { page.style.visibility = 'hidden'; page.style.display = 'block'; }
+  const ref = [...document.querySelectorAll('.flip-page, .flip-page-browsing-left, .flip-page-browsing-right')]
+    .find(p => p.offsetWidth > 0);
+  if (!ref) return;
+  const W = ref.offsetWidth, H = ref.offsetHeight;
 
-    const texts = inner.querySelectorAll('.english-text p, .local-text p');
-    texts.forEach(p => { p.style.fontSize = ''; });
-    if (texts.length && inner.clientHeight > 0) {
-      let scale = 1;
-      const base = [...texts].map(p => parseFloat(getComputedStyle(p).fontSize));
-      while (inner.scrollHeight > inner.clientHeight + 1 && scale > 0.6) {
-        scale -= 0.04;
-        texts.forEach((p, i) => { p.style.fontSize = (base[i] * scale) + 'px'; });
-      }
-    }
-
-    if (hidden) { page.style.display = 'none'; page.style.visibility = ''; }
+  const items = [...document.querySelectorAll('.flip-page .page-inner')]
+    .map(inner => ({ inner, flow: inner.querySelector('.page-flow'), page: inner.closest('.flip-page') }))
+    .filter(x => x.flow);
+  const texts = x => [...x.flow.querySelectorAll('.english-text p, .local-text p')];
+  const show = x => {
+    x.saved = x.page.getAttribute('style');
+    x.off = x.page.offsetWidth === 0;
+    if (x.off) x.page.style.cssText = `display:block;position:absolute;visibility:hidden;left:0;top:0;width:${W}px;height:${H}px;`;
+  };
+  const hide = x => {
+    if (!x.off) return;
+    if (x.saved === null) x.page.removeAttribute('style'); else x.page.setAttribute('style', x.saved);
+  };
+  const apply = (x, scale) => texts(x).forEach((p, i) => {
+    p.style.fontSize = scale < 1 ? (x.base[i] * scale) + 'px' : '';
   });
+
+  items.forEach(x => {
+    show(x);
+    texts(x).forEach(p => { p.style.fontSize = ''; });
+    x.base = texts(x).map(p => parseFloat(getComputedStyle(p).fontSize));
+    hide(x);
+  });
+
+  let scale = 1;
+  items.forEach(x => {
+    show(x);
+    apply(x, scale);
+    while (x.flow.offsetHeight > x.inner.clientHeight && scale > 0.6) {
+      scale -= 0.03;
+      apply(x, scale);
+    }
+    hide(x);
+  });
+  items.forEach(x => apply(x, scale));
 }
 
 function scheduleFit() {
