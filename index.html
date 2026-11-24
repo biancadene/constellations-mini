@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<!-- VERSION MARKER: v58-guarani-corners -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Constellations</title>
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap');
+
+  * { box-sizing: border-box; font-family: 'Fraunces', serif; }
+
+  :root {
+    --navy: #2c3e50;
+    --sage: #6b8f71;
+    --cream: #f5f1e8;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #1a0f08;
+    /* Grandpa's roll-top desk, with the edges darkened so the book
+       stays the brightest thing on the screen */
+    background-image:
+      radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 40%, rgba(12,6,2,0.6) 100%),
+      url('desk_background.jpg');
+    background-size: cover, cover;
+    background-position: center, center top;
+    background-attachment: fixed, fixed;
+    background-repeat: no-repeat, no-repeat;
+  }
+
+  .browsing-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .cover-stage {
+    position: relative;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .cover-img {
+    height: 70vh;
+    max-height: 800px;
+    width: auto;
+    display: block;
+    transition: transform 0.3s ease;
+    /* resting on the desk, not floating over it */
+    filter: drop-shadow(0 18px 22px rgba(0,0,0,0.6));
+  }
+
+  .cover-stage:hover .cover-img {
+    transform: scale(1.02);
+  }
+
+  .cover-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    text-align: center;
+    color: rgba(255,230,180,0.85);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    margin-top: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .cover-stage:hover .cover-hint {
+    opacity: 1;
+  }
+
+  .cover-title {
+    position: absolute;
+    left: 30.3%;
+    top: 35.9%;
+    width: 43.5%;
+    height: 17.9%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .cover-title span {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    letter-spacing: 0.08em;
+    color: #e8c586;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 12px rgba(232,197,134,0.4);
+  }
+
+  /* ===== Continuous book viewport ===== */
+
+  .book-viewport {
+    position: relative;
+    width: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* The flip library sizes against the PARENT of #flipbookRoot.
+     Limit that parent by BOTH viewport dimensions, so neither edge clips. */
+  .book-frame {
+    position: relative;
+    flex: 0 0 auto;
+    width: min(calc(100vw - 32px), calc((100dvh - 150px) * 1000 / 560), 1400px);
+    aspect-ratio: 1000 / 560;
+    min-width: 0;
+    min-height: 0;
+    isolation: isolate;
+  }
+
+  /* soft contact shadow where the open book meets the desk */
+  .book-frame::before {
+    content: '';
+    position: absolute;
+    left: 3%;
+    right: 3%;
+    bottom: -4%;
+    height: 14%;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%);
+    filter: blur(10px);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .unified-flipbook {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .flipbook-topbar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+  }
+
+  .flipbook-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+  }
+
+  /* Leather-and-gold buttons to match the book cover on the desk */
+  .flipbook-controls button, .flipbook-topbar button {
+    padding: 10px 20px;
+    background: linear-gradient(180deg, #4a2e1a 0%, #33200f 100%);
+    color: #e8c586;
+    border: 1px solid rgba(232,197,134,0.55);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    letter-spacing: 0.03em;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,220,160,0.15);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+
+  .flipbook-controls button:hover, .flipbook-topbar button:hover {
+    background: linear-gradient(180deg, #5c3a20 0%, #402814 100%);
+    color: #f6dca4;
+    transform: translateY(-1px);
+  }
+
+  .flip-page-browsing-left {
+    position: relative;
+    background-image: url('book_isolated.png');
+    background-size: 200% 100%;
+    background-position: left center;
+    background-repeat: no-repeat;
+  }
+
+  .flip-page-browsing-right {
+    position: relative;
+    background-image: url('book_isolated.png');
+    background-size: 200% 100%;
+    background-position: right center;
+    background-repeat: no-repeat;
+  }
+
+  .banner-title {
+    position: absolute;
+    left: 36.8%;
+    top: 14.6%;
+    width: 51.7%;
+    height: 9.0%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .banner-title span {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    color: #6b4f28;
+  }
+
+  .left-page-zone {
+    position: absolute;
+    left: 36%;
+    top: 33%;
+    width: 60%;
+    height: 24%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: space-evenly;
+    justify-items: start;
+    gap: 6%;
+    overflow: visible;
+  }
+
+  .lang-btn {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(120,80,20,0.4);
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #4a3418;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.25s ease, transform 0.2s ease;
+  }
+
+  .lang-btn:hover {
+    background: rgba(255,215,120,0.35);
+    transform: translateY(-2px);
+  }
+
+  .lang-btn.active {
+    background: rgba(255,200,80,0.5);
+    font-weight: 600;
+  }
+
+  .lang-btn:nth-child(odd) {
+    margin-left: 12%;
+  }
+
+  .right-page-circle {
+    container-type: inline-size;
+    position: absolute;
+    left: 9.4%;
+    top: 23.9%;
+    width: 51.6%;
+    height: 39.5%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding: 4px;
+    /* visible so an enlarged story cover isn't clipped by the circle */
+    overflow: visible;
+  }
+
+  .right-page-circle .empty-state {
+    color: #6b4f28;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
+  .story-thumb {
+    width: clamp(43px, 21cqw, 90px);
+    aspect-ratio: 60 / 89;
+    height: auto;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transform-origin: center center;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .story-row:has(.story-thumb:nth-child(2):last-child) .story-thumb {
+    width: clamp(65px, 31cqw, 120px);
+    height: auto;
+  }
+
+  .story-row:has(.story-thumb:only-child) .story-thumb {
+    width: clamp(86px, 44cqw, 160px);
+    height: auto;
+  }
+
+  .story-thumb:hover,
+  .story-thumb:focus-visible {
+    transform: scale(1.6);
+    z-index: 5;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+  }
+
+  .story-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .story-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .debug .left-page-zone, .debug .right-page-circle {
+    outline: 2px dashed rgba(255,0,0,0.6);
+  }
+
+  .flip-page {
+    background-color: var(--cream);
+    background-image: url('story_page_bg.png');
+    background-size: cover;
+    background-position: center;
+    /* No padding: % padding resolves against the whole book, not the page,
+       which shrank the container and forced text to its minimum size.
+       Insets now live on .page-inner and .title-page-inner instead. */
+    padding: 0;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+    position: relative;
+    container-type: inline-size;
+  }
+
+  /* Story pages: text on top, illustration fills the space below it.
+     Flow layout (not absolute positions), so the two can never overlap
+     and there is no dead gap between them at any zoom level. */
+  .page-inner {
+    position: absolute;
+    top: 12%;
+    left: 12%;
+    right: 12%;
+    bottom: 11%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4cqw;
+  }
+
+  .page-inner .english-text {
+    width: 100%;
+    flex: 0 1 auto;
+    max-height: 48%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+  }
+
+  .page-inner .local-text {
+    width: 100%;
+    flex: 0 1 auto;
+    max-height: 24%;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .title-page-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 14% 14%;
+    text-align: center;
+    gap: 1.6cqw;
+  }
+
+  .title-culture {
+    font-size: clamp(10px, 2.2cqw, 15px);
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    /* constellation tint, darkened so it reads on the gold page */
+    color: color-mix(in srgb, var(--tint, #6b4f28) 65%, #2c1d10);
+  }
+
+  .title-star {
+    font-size: clamp(12px, 2.6cqw, 18px);
+    color: #b8862e;
+    line-height: 1;
+  }
+
+  .title-page-inner h1 {
+    color: var(--navy);
+    font-size: clamp(17px, 3.7cqw, 26px);
+    line-height: 1.35;
+    margin: 0.4em 0 0;
+  }
+
+  .title-setting {
+    font-size: clamp(11px, 2.4cqw, 16px);
+    font-style: italic;
+    color: #6b4f28;
+  }
+
+  .title-vignette {
+    margin-top: 3cqw;
+    width: auto;
+    max-width: 62%;
+    max-height: 34%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 3px 12px rgba(80, 50, 10, 0.25);
+  }
+
+  .flip-page .english-text p {
+    font-size: clamp(12px, 3cqw, 20px);
+    line-height: 1.55;
+    color: var(--navy);
+    margin: 0;
+  }
+
+  .flip-page .local-text p {
+    font-size: clamp(11px, 2.6cqw, 17px);
+    line-height: 1.4;
+    font-style: italic;
+    color: var(--sage);
+    margin: 0;
+  }
+
+  .flip-page-img {
+    flex: 1 1 0;
+    min-height: 0;
+    width: auto;
+    height: auto;
+    max-width: 85%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center top;
+    border-radius: 8px;
+  }
+
+  /* Uniform frame: every framed image is the same size and shape,
+     cropped to fill (focus point set per page in stories-data.js). */
+  .flip-page-img.flip-page-img-framed {
+    flex: 0 1 auto;
+    width: 80%;
+    max-width: 80%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  /* ===== Story pages sit on the physical open book =====
+     Every story page shows one half of book_blank.png (cover, page stack,
+     curved parchment), so the book never disappears while reading.
+     The constellation's corner ornaments are a transparent layer on top. */
+  .flip-page.book-left,
+  .flip-page.book-right {
+    background-color: transparent;
+    background-image: url('book_blank.png');
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    box-shadow: none;
+  }
+  .flip-page.book-left  { background-position: left center; }
+  .flip-page.book-right { background-position: right center; }
+
+  /* Corner ornaments, placed on the parchment area of each half */
+  .flip-page.book-left::before,
+  .flip-page.book-right::before {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-size: 50% auto;
+    background-position: top left, top right, bottom left, bottom right;
+    background-image:
+      url('orn_default_tl.png'), url('orn_default_tr.png'),
+      url('orn_default_bl.png'), url('orn_default_br.png');
+  }
+  .flip-page.book-left::before  { top: 5.3%; bottom: 16.3%; left: 21.8%; right: 3.0%; }
+  .flip-page.book-right::before { top: 6.0%; bottom: 16.3%; left: 4.1%;  right: 23.2%; }
+
+  .flip-page[data-constellation="Mi'kmaq"]::before {
+    background-size: 30% auto;
+    background-image:
+      url('orn_mikmaq_tl.png'), url('orn_mikmaq_tr.png'),
+      url('orn_mikmaq_bl.png'), url('orn_mikmaq_br.png');
+  }
+
+  .flip-page[data-constellation="Wendat"]::before {
+    background-image:
+      url('orn_wendat_tl.png'), url('orn_wendat_tr.png'),
+      url('orn_wendat_bl.png'), url('orn_wendat_br.png');
+  }
+
+  .flip-page[data-constellation="Canary Islands"]::before {
+    background-size: 42% auto;
+    background-image:
+      url('orn_canary_tl.png'), url('orn_canary_tr.png'),
+      url('orn_canary_bl.png'), url('orn_canary_br.png');
+  }
+
+  .flip-page[data-constellation="Aotearoa"]::before {
+    background-size: 42% auto;
+    background-image:
+      url('orn_aotearoa_tl.png'), url('orn_aotearoa_tr.png'),
+      url('orn_aotearoa_bl.png'), url('orn_aotearoa_br.png');
+  }
+
+  .flip-page[data-constellation="Congo Basin"]::before {
+    background-size: 42% auto;
+    background-image:
+      url('orn_congo_tl.png'), url('orn_congo_tr.png'),
+      url('orn_congo_bl.png'), url('orn_congo_br.png');
+  }
+
+  .flip-page[data-constellation="Uruguay"]::before {
+    background-size: 42% auto;
+    background-image:
+      url('orn_guarani_tl.png'), url('orn_guarani_tr.png'),
+      url('orn_guarani_bl.png'), url('orn_guarani_br.png');
+  }
+
+  /* Text and pictures stay inside the corners on the curved page */
+  .flip-page.book-left .page-inner  { top: 17.8%; bottom: 22.6%; left: 26.3%; right: 7.5%; }
+  .flip-page.book-right .page-inner { top: 18.4%; bottom: 22.6%; left: 8.5%;  right: 27.6%; }
+  .flip-page.book-left .page-inner .english-text,
+  .flip-page.book-right .page-inner .english-text { max-height: 60%; }
+  .flip-page.book-left .title-page-inner {
+    position: absolute;
+    height: auto;
+    padding: 0;
+    top: 17.8%; bottom: 22.6%; left: 26.3%; right: 7.5%;
+  }
+
+  .pv1 { background-image: url('page_variant_1.png'); }
+  .pv2 { background-image: url('page_variant_2.png'); }
+  .pv3 { background-image: url('page_variant_3.png'); }
+  .pv4 { background-image: url('page_variant_4.png'); }
+  .pv5 { background-image: url('page_variant_5.png'); }
+  .pv6 { background-image: url('page_variant_6.png'); }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="stories-data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
