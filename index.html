@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION MARKER: v58-guarani-corners -->
+<!-- VERSION MARKER: v59-flowing-pages -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -361,36 +361,27 @@
     container-type: inline-size;
   }
 
-  /* Story pages: text on top, illustration fills the space below it.
-     Flow layout (not absolute positions), so the two can never overlap
-     and there is no dead gap between them at any zoom level. */
+  /* Story pages: the picture sits in the top outer corner at its own
+     shape, and the text wraps around it and continues below it, like a
+     printed picture book. Nothing scrolls: app.js shrinks the text a
+     little on any page where it would not fit. */
   .page-inner {
     position: absolute;
     top: 12%;
     left: 12%;
     right: 12%;
     bottom: 11%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4cqw;
+    display: block;
+    overflow: hidden;
   }
 
-  .page-inner .english-text {
-    width: 100%;
-    flex: 0 1 auto;
-    max-height: 48%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: thin;
+  .page-inner .english-text,
+  .page-inner .local-text {
+    overflow: visible;
   }
 
   .page-inner .local-text {
-    width: 100%;
-    flex: 0 1 auto;
-    max-height: 24%;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    margin-top: 0.8em;
   }
 
   .title-page-inner {
@@ -443,39 +434,40 @@
   }
 
   .flip-page .english-text p {
-    font-size: clamp(12px, 3cqw, 20px);
-    line-height: 1.55;
+    font-size: clamp(11px, 2.9cqw, 19px);
+    line-height: 1.5;
     color: var(--navy);
     margin: 0;
   }
 
   .flip-page .local-text p {
-    font-size: clamp(11px, 2.6cqw, 17px);
+    font-size: clamp(10px, 2.5cqw, 16px);
     line-height: 1.4;
     font-style: italic;
     color: var(--sage);
     margin: 0;
   }
 
+  /* The picture keeps its own shape (never squeezed) and floats to the
+     outer edge of the page so the words can flow around it. */
   .flip-page-img {
-    flex: 1 1 0;
-    min-height: 0;
-    width: auto;
+    display: block;
+    width: 55%;
     height: auto;
-    max-width: 85%;
-    max-height: 100%;
+    max-height: 60%;
     object-fit: contain;
-    object-position: center top;
     border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(80, 50, 10, 0.18);
   }
+  .flip-page-img.float-right { float: right; margin: 0.3em 0 0.6em 4cqw; }
+  .flip-page-img.float-left  { float: left;  margin: 0.3em 4cqw 0.6em 0; }
+
+  /* Pages with a second language leave a little more room for words */
+  .flip-page-img.flip-page-img-compact { width: 44%; }
 
   /* Uniform frame: every framed image is the same size and shape,
      cropped to fill (focus point set per page in stories-data.js). */
   .flip-page-img.flip-page-img-framed {
-    flex: 0 1 auto;
-    width: 80%;
-    max-width: 80%;
-    height: auto;
     aspect-ratio: 16 / 10;
     object-fit: cover;
   }
@@ -555,8 +547,6 @@
   /* Text and pictures stay inside the corners on the curved page */
   .flip-page.book-left .page-inner  { top: 17.8%; bottom: 22.6%; left: 26.3%; right: 7.5%; }
   .flip-page.book-right .page-inner { top: 18.4%; bottom: 22.6%; left: 8.5%;  right: 27.6%; }
-  .flip-page.book-left .page-inner .english-text,
-  .flip-page.book-right .page-inner .english-text { max-height: 60%; }
   .flip-page.book-left .title-page-inner {
     position: absolute;
     height: auto;

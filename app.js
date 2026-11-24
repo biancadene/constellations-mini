@@ -36,28 +36,70 @@ function buildTitlePageHTML(story) {
 }
 
 function buildStoryPagesHTML(story) {
-  return story.pages.map((pageData, idx) => {
+  const pagesHTML = story.pages.map((pageData, idx) => {
     const pageNumber = idx + 1;
     const hasImage = story.imagePages[pageNumber];
     const hasDualText = story.languageLabel && pageData.local;
     // Pages listed in story.imageFraming share one fixed frame (same size on
     // every page); the value is the crop focus point, e.g. 'center 30%'.
     const framing = story.imageFraming && story.imageFraming[pageNumber];
-    let imgClass = hasDualText ? 'flip-page-img flip-page-img-compact' : 'flip-page-img';
-    if (framing) imgClass += ' flip-page-img-framed';
-    const imgStyle = framing ? ` style="object-position:${framing}"` : '';
     // The title page sits on the left half of the open book, so story page 1 is on the right.
     const side = idx % 2 === 0 ? 'book-right' : 'book-left';
+    // The picture sits at the top of the page, toward the outer edge,
+    // and the text flows around it and on below it.
+    let imgClass = side === 'book-right' ? 'flip-page-img float-right' : 'flip-page-img float-left';
+    if (hasDualText) imgClass += ' flip-page-img-compact';
+    if (framing) imgClass += ' flip-page-img-framed';
+    const imgStyle = framing ? ` style="object-position:${framing}"` : '';
     return `
       <div class="flip-page ${side}" data-density="soft" data-constellation="${story.constellation}">
         <div class="page-inner">
+          ${hasImage ? `<img class="${imgClass}"${imgStyle} src="${story.images[pageNumber]}" alt="Page ${pageNumber}" />` : ''}
           <div class="english-text"><p>${pageData.english}</p></div>
           ${hasDualText ? `<div class="local-text"><p>${pageData.local}</p></div>` : ''}
-          ${hasImage ? `<img class="${imgClass}"${imgStyle} src="${story.images[pageNumber]}" alt="Page ${pageNumber}" />` : ''}
         </div>
       </div>
     `;
-  }).join('');
+  });
+
+  // If the story ends on a left-hand page, add a blank right-hand page
+  // so the book closes on a full open spread instead of half a book.
+  const lastSide = (story.pages.length - 1) % 2 === 0 ? 'book-right' : 'book-left';
+  if (lastSide === 'book-left') {
+    pagesHTML.push(`
+      <div class="flip-page book-right end-page" data-density="soft" data-constellation="${story.constellation}">
+        <div class="page-inner"></div>
+      </div>
+    `);
+  }
+  return pagesHTML.join('');
+}
+
+/* Shrink the text on any page where it doesn't fit, so no page ever
+   needs a scroll bar. Hidden pages are shown invisibly while measured. */
+function fitPageText() {
+  document.querySelectorAll('.flip-page .page-inner').forEach(inner => {
+    const page = inner.closest('.flip-page');
+    const hidden = page && getComputedStyle(page).display === 'none';
+    if (hidden) { page.style.visibility = 'hidden'; page.style.display = 'block'; }
+
+    const texts = inner.querySelectorAll('.english-text p, .local-text p');
+    texts.forEach(p => { p.style.fontSize = ''; });
+    if (texts.length && inner.clientHeight > 0) {
+      let scale = 1;
+      const base = [...texts].map(p => parseFloat(getComputedStyle(p).fontSize));
+      while (inner.scrollHeight > inner.clientHeight + 1 && scale > 0.6) {
+        scale -= 0.04;
+        texts.forEach((p, i) => { p.style.fontSize = (base[i] * scale) + 'px'; });
+      }
+    }
+
+    if (hidden) { page.style.display = 'none'; page.style.visibility = ''; }
+  });
+}
+
+function scheduleFit() {
+  requestAnimationFrame(() => requestAnimationFrame(fitPageText));
 }
 
 function wireBrowsingInteractions() {
@@ -101,6 +143,12 @@ function buildAndLoadPageFlip(pagesHTMLArray) {
 
   pageFlip.loadFromHTML(flipElement.querySelectorAll('.flip-page-browsing-left, .flip-page-browsing-right, .flip-page'));
 
+  // Re-fit text once pictures have loaded, since they change how much room is left.
+  flipElement.querySelectorAll('.page-inner img').forEach(img => {
+    if (!img.complete) img.addEventListener('load', scheduleFit, { once: true });
+  });
+  scheduleFit();
+
   const backBtn = document.getElementById('backBtn');
   const prevBtn = document.getElementById('flipPrevBtn');
   const nextBtn = document.getElementById('flipNextBtn');
@@ -109,12 +157,19 @@ function buildAndLoadPageFlip(pagesHTMLArray) {
     const idx = e.data;
     backBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
   });
+  pageFlip.on('changeOrientation', scheduleFit);
 
   prevBtn.onclick = () => pageFlip.flipPrev();
   nextBtn.onclick = () => pageFlip.flipNext();
   backBtn.onclick = () => pageFlip.flip(0);
   backBtn.style.visibility = 'hidden';
 }
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(scheduleFit, 200);
+});
 
 function initBook() {
   const root = document.getElementById('root');
