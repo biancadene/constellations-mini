@@ -10,7 +10,7 @@ My research project *Beyond the Family Tree* looked at how people preserve famil
 
 Constellations is my design response to that finding. Instead of a tree of names and dates, it gives a child the stories: who these people were, where they lived, what was done to them, and what they did anyway.
 
-Paper: Beyond the Family Tree — [link]
+Paper: [Beyond the Family Tree: How Families Preserve and Pass On Their History](https://doi.org/10.5281/zenodo.24268594) (Zenodo, 2026)
 
 ## What's in this snapshot
 
