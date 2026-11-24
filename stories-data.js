@@ -3,7 +3,7 @@ const stories = [
     id: 'mikmaq-judith',
     title: 'Judith and Barthélemy, Children of Two Worlds',
     constellation: 'Mi\'kmaq',
-    coverImage: 'https://i.imgur.com/shFAVVK.png',
+    coverImage: 'https://i.imgur.com/IzuHc0P.png',
     setting: 'Mouscoudabouet, 1687',
     languageLabel: '',
     imagePages: { 1: true, 2: true, 5: true, 6: true, 8: true, 10: true, 12: true },
