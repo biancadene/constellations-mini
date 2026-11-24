@@ -2,6 +2,8 @@
 
 A heritage storybook for my son, built as a web app. Each constellation is one line of his ancestry, and each story is a real ancestor, or the culture and folklore that line carries.
 
+Live: [constellations-mini.vercel.app](https://constellations-mini.vercel.app)
+
 ## Why it exists
 
 My research project *Beyond the Family Tree* looked at how people preserve family history and pass it on. Respondents kept describing the same thing: a tin or a box of photos with no names, notes or stories attached. The history survived, but the meaning didn't.
